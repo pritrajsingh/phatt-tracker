@@ -415,6 +415,7 @@ import {
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithPopup,
   signInWithRedirect,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -829,7 +830,25 @@ document.getElementById('resetBtn').addEventListener('click', async () => {
 
 document.getElementById('signInBtn').addEventListener('click', async () => {
   setSyncStatus('Opening Google sign-in...');
-  await signInWithRedirect(auth, googleProvider);
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (e) {
+    console.error('Popup sign-in failed', e);
+    const canFallbackToRedirect = [
+      'auth/popup-blocked',
+      'auth/popup-closed-by-user',
+      'auth/cancelled-popup-request',
+      'auth/operation-not-supported-in-this-environment'
+    ].includes(e.code);
+
+    if (!canFallbackToRedirect) {
+      setSyncStatus(`Sign-in failed: ${e.code || 'try again'}`);
+      return;
+    }
+
+    setSyncStatus('Opening Google sign-in page...');
+    await signInWithRedirect(auth, googleProvider);
+  }
 });
 
 document.getElementById('signOutBtn').addEventListener('click', async () => {
