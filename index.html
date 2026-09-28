@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Daily Plan Tracker</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --cp-bg: #f7f4ef;
+    --cp-bg-elevated: #fcfbf8;
+    --cp-surface: #ffffff;
+    --cp-surface-soft: #f5f5f5;
+    --cp-border: #dedede;
+    --cp-border-strong: #919191;
+    --cp-text: #242424;
+    --cp-text-muted: #5c5c5c;
+    --cp-text-soft: #6f6f6f;
+    --cp-accent: #b11f4b;
+    --cp-accent-hover: #9a1a41;
+    --cp-accent-soft: rgba(177, 31, 75, 0.08);
+    --cp-accent-fg: #ffffff;
+    --cp-success: #16a34a;
+    --cp-danger: #dc2626;
+    --cp-warning: #f59e0b;
+    --cp-link: #0078d4;
+    --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+    --cp-overlay: rgba(255, 255, 255, 0.8);
+    --cp-panel: rgba(255, 255, 255, 0.86);
+    --cp-panel-strong: rgba(255, 255, 255, 0.96);
+    --cp-sheen: rgba(255, 255, 255, 0.55);
+    --cp-highlight: rgba(177, 31, 75, 0.12);
+    --bg: var(--cp-bg);
+    --card: var(--cp-surface);
+    --border: var(--cp-border);
+    --ink: var(--cp-text);
+    --ink-soft: var(--cp-text-muted);
+    --pine: var(--cp-accent);
+    --pine-soft: var(--cp-accent-soft);
+    --clay: var(--cp-warning);
+    --clay-soft: var(--cp-highlight);
+    --plum: var(--cp-link);
+    --plum-soft: var(--cp-accent-soft);
+    --rose: var(--cp-danger);
+    --rose-soft: var(--cp-accent-soft);
+    --done: var(--cp-success);
+    --done-soft: var(--cp-accent-soft);
+    --radius: 16px;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --cp-bg: #3d3b3a;
+    --cp-bg-elevated: #343231;
+    --cp-surface: #292929;
+    --cp-surface-soft: #2e2e2e;
+    --cp-border: #474747;
+    --cp-border-strong: #5f5f5f;
+    --cp-text: #dedede;
+    --cp-text-muted: #919191;
+    --cp-text-soft: #b0b0b0;
+    --cp-accent: #fd8ea1;
+    --cp-accent-hover: #fb7b91;
+    --cp-accent-soft: rgba(253, 142, 161, 0.14);
+    --cp-accent-fg: #1a1a1a;
+    --cp-success: #4ade80;
+    --cp-danger: #f87171;
+    --cp-warning: #fbbf24;
+    --cp-link: #4da6ff;
+    --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+    --cp-overlay: rgba(41, 41, 41, 0.88);
+    --cp-panel: rgba(41, 41, 41, 0.72);
+    --cp-panel-strong: rgba(41, 41, 41, 0.96);
+    --cp-sheen: rgba(255, 255, 255, 0.04);
+    --cp-highlight: rgba(253, 142, 161, 0.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding-bottom: 48px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--bg);
+    padding: 18px 18px 8px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar h1 {
+    margin: 0 0 2px 0;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--pine);
+  }
+  .topbar .sub {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  .datestrip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 14px 18px 6px 18px;
+    scroll-behavior: smooth;
+  }
+  .datestrip::-webkit-scrollbar { display: none; }
+  .datechip {
+    flex: 0 0 auto;
+    width: 54px;
+    padding: 8px 0 10px 0;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    text-align: center;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .datechip .dow { font-size: 10.5px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .datechip .num { font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .datechip .weight-mini { min-height: 12px; margin-top: 2px; font-size: 10px; font-weight: 700; color: var(--ink-soft); }
+  .datechip .dot { width: 5px; height: 5px; border-radius: 50%; margin: 5px auto 0 auto; background: transparent; }
+  .datechip.today { border-color: var(--clay); }
+  .datechip.selected { background: var(--pine); border-color: var(--pine); }
+  .datechip.selected .dow, .datechip.selected .num, .datechip.selected .weight-mini { color: var(--cp-accent-fg); }
+  .datechip.complete .dot { background: var(--done); }
+  .datechip:active { transform: scale(0.94); }
+
+  .summary {
+    margin: 14px 18px 4px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .ring-wrap { position: relative; width: 76px; height: 76px; flex: 0 0 auto; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-label {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .ring-label .n { font-size: 16px; font-weight: 800; line-height: 1; }
+  .ring-label .d { font-size: 8.5px; color: var(--ink-soft); margin-top: 2px; }
+  .summary-text { flex: 1; min-width: 0; }
+  .summary-text .step {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--pine-soft);
+    color: var(--pine);
+    margin-bottom: 6px;
+  }
+  .summary-text .date {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 3px 0;
+  }
+  .weight-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 6px 0;
+  }
+  .weight-row label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+  .weight-input {
+    width: 92px;
+    min-height: 34px;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--cp-surface);
+    color: var(--ink);
+    font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .weight-input:focus {
+    outline: 2px solid var(--cp-accent);
+    outline-offset: 1px;
+  }
+  .weight-unit {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .weight-confirm {
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 1px solid var(--cp-accent);
+    border-radius: 0.625rem;
+    background: var(--cp-accent);
+    color: var(--cp-accent-fg);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .weight-confirm:active { background: var(--cp-accent-hover); }
+  .summary-text .stats {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .list {
+    padding: 16px 18px 8px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 13px 14px;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+  }
+  .item:active { transform: scale(0.99); }
+  .item.done { background: var(--done-soft); border-color: var(--cp-success); }
+  .item.done .item-title,
+  .item.done .item-time,
+  .item.done .item-kind-tag,
+  .item.done .item-cal {
+    text-decoration: line-through;
+    text-decoration-color: var(--ink-soft);
+    opacity: .65;
+  }
+
+  .check {
+    flex: 0 0 auto;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--cp-border-strong);
+    background: var(--cp-surface);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s ease;
+  }
+  .item.done .check {
+    background: var(--done);
+    border-color: var(--done);
+  }
+  .check svg { width: 14px; height: 14px; opacity: 0; transition: opacity .1s ease; }
+  .item.done .check svg { opacity: 1; }
+
+  .item-body { flex: 1; min-width: 0; }
+  .item-time {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    letter-spacing: .01em;
+  }
+  .item-title {
+    font-size: 14.5px;
+    line-height: 1.35;
+    margin-top: 2px;
+    color: var(--ink);
+  }
+  .item-kind-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-top: 6px;
+  }
+  .kind-meal .item-kind-tag { background: var(--clay-soft); color: var(--clay); }
+  .kind-supplement .item-kind-tag { background: var(--plum-soft); color: var(--plum); }
+  .kind-medicine .item-kind-tag { background: var(--rose-soft); color: var(--rose); }
+  .kind-meal { border-left: 3px solid var(--clay); }
+  .kind-supplement { border-left: 3px solid var(--plum); }
+  .kind-medicine { border-left: 3px solid var(--rose); }
+
+  .item-cal {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-align: right;
+    min-width: 44px;
+  }
+
+  .footnote {
+    margin: 18px 18px 0 18px;
+    padding: 14px 16px;
+    background: var(--rose-soft);
+    border-radius: 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--cp-danger);
+  }
+  .footnote b { color: var(--cp-danger); }
+
+  .reset-row {
+    margin: 16px 18px 0 18px;
+    display: flex;
+    justify-content: center;
+  }
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .reset-btn:active { background: var(--border); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--pine);
+    color: var(--cp-accent-fg);
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: all .25s ease;
+    z-index: 50;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .loading {
+    padding: 40px; text-align: center; color: var(--ink-soft); font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Daily Plan Tracker</h1>
+  <p class="sub">Ph@tt Program — meals, fish oil, fiber &amp; medicine</p>
+</div>
+
+<div class="datestrip" id="datestrip"></div>
+
+<div class="summary" id="summary"></div>
+
+<div class="list" id="list"></div>
+
+<div class="footnote">
+  <b>Reminders:</b> All protein/veg amounts are raw weight. Calories are planning estimates, not lab-verified. BP (8:00 AM) &amp; cholesterol (8:00 PM) medicine times are placeholders — confirm actual times with your doctor. Fiber is taken before lunch per the Metamucil label; space it from medicines and drink a full glass of water.
+</div>
+
+<div class="reset-row">
+  <button class="reset-btn" id="resetBtn">Reset selected day's check-ins</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PLAN = [{"date": "2026-09-26", "dayName": "Saturday", "step": "STEP 1", "items": [{"time": "7:00 AM", "item": "Chicken & 1 Egg (protein, no gram limit on Step 1)", "cal": 220, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1 Green Apple (Step 1 daily fruit allowance)", "cal": 95, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "Chicken breast, Broccoli, Cauliflower, Zucchini (no limit)", "cal": 250, "kind": "meal"}, {"time": "4:00 PM", "item": "Cucumber & Celery sticks (no limit)", "cal": 25, "kind": "meal"}, {"time": "6:30 PM", "item": "White Fish, Asparagus, Green Cabbage, Spinach (no limit)", "cal": 230, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-09-27", "dayName": "Sunday", "step": "STEP 1", "items": [{"time": "7:00 AM", "item": "Chicken & 1 Egg (protein, no gram limit on Step 1)", "cal": 220, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1 Green Apple (Step 1 daily fruit allowance)", "cal": 95, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "Chicken breast, Broccoli, Cauliflower, Zucchini (no limit)", "cal": 250, "kind": "meal"}, {"time": "4:00 PM", "item": "Cucumber & Celery sticks (no limit)", "cal": 25, "kind": "meal"}, {"time": "6:30 PM", "item": "White Fish, Asparagus, Green Cabbage, Spinach (no limit)", "cal": 230, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-09-28", "dayName": "Monday", "step": "STEP 2 (Wk 1)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 300g Cucumber", "cal": 165, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Salmon, 140g Cauliflower", "cal": 180, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-09-29", "dayName": "Tuesday", "step": "STEP 2 (Wk 1)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 150g Spinach, 1 Plain Rice Cake", "cal": 189, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 140g Cauliflower", "cal": 162, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-09-30", "dayName": "Wednesday", "step": "STEP 2 (Wk 1)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 140g Broccoli, 50g Onion", "cal": 188, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "125g White Fish, 150g Green Cabbage", "cal": 150, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-01", "dayName": "Thursday", "step": "STEP 2 (Wk 1)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Turkey, 160g Silver Beet, 100g Fennel", "cal": 196, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 320g Asparagus", "cal": 184, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-02", "dayName": "Friday", "step": "STEP 2 (Wk 1)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 350g Zucchini", "cal": 180, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Tuna, 250g Broccoli", "cal": 195, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-03", "dayName": "Saturday", "step": "STEP 2 (Wk 1)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 170g Cauliflower, 70g Onion", "cal": 190, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 250g Bok Choy", "cal": 152, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-04", "dayName": "Sunday", "step": "STEP 2 (Wk 1)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 200g Green Cabbage, 1 Plain Rice Cake", "cal": 205, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 170g Zucchini", "cal": 156, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-05", "dayName": "Monday", "step": "STEP 2 (Wk 2)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 300g Cucumber", "cal": 165, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Salmon, 140g Cauliflower", "cal": 180, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-06", "dayName": "Tuesday", "step": "STEP 2 (Wk 2)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 150g Spinach, 1 Plain Rice Cake", "cal": 189, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 140g Cauliflower", "cal": 162, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-07", "dayName": "Wednesday", "step": "STEP 2 (Wk 2)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 140g Broccoli, 50g Onion", "cal": 188, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "125g White Fish, 150g Green Cabbage", "cal": 150, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-08", "dayName": "Thursday", "step": "STEP 2 (Wk 2)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Turkey, 160g Silver Beet, 100g Fennel", "cal": 196, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 320g Asparagus", "cal": 184, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-09", "dayName": "Friday", "step": "STEP 2 (Wk 2)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 350g Zucchini", "cal": 180, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Tuna, 250g Broccoli", "cal": 195, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-10", "dayName": "Saturday", "step": "STEP 2 (Wk 2)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 170g Cauliflower, 70g Onion", "cal": 190, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 250g Bok Choy", "cal": 152, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-11", "dayName": "Sunday", "step": "STEP 2 (Wk 2)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 200g Green Cabbage, 1 Plain Rice Cake", "cal": 205, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 170g Zucchini", "cal": 156, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-12", "dayName": "Monday", "step": "STEP 2 (Wk 3)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 300g Cucumber", "cal": 165, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Salmon, 140g Cauliflower", "cal": 180, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-13", "dayName": "Tuesday", "step": "STEP 2 (Wk 3)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 150g Spinach, 1 Plain Rice Cake", "cal": 189, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 140g Cauliflower", "cal": 162, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-14", "dayName": "Wednesday", "step": "STEP 2 (Wk 3)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 140g Broccoli, 50g Onion", "cal": 188, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "125g White Fish, 150g Green Cabbage", "cal": 150, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-15", "dayName": "Thursday", "step": "STEP 2 (Wk 3)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Turkey, 160g Silver Beet, 100g Fennel", "cal": 196, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 320g Asparagus", "cal": 184, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-16", "dayName": "Friday", "step": "STEP 2 (Wk 3)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 350g Zucchini", "cal": 180, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Tuna, 250g Broccoli", "cal": 195, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-17", "dayName": "Saturday", "step": "STEP 2 (Wk 3)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 170g Cauliflower, 70g Onion", "cal": 190, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 250g Bok Choy", "cal": 152, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-18", "dayName": "Sunday", "step": "STEP 2 (Wk 3)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 200g Green Cabbage, 1 Plain Rice Cake", "cal": 205, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 170g Zucchini", "cal": 156, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-19", "dayName": "Monday", "step": "STEP 2 (Wk 4)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 300g Cucumber", "cal": 165, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Salmon, 140g Cauliflower", "cal": 180, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-20", "dayName": "Tuesday", "step": "STEP 2 (Wk 4)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 150g Spinach, 1 Plain Rice Cake", "cal": 189, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 140g Cauliflower", "cal": 162, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-21", "dayName": "Wednesday", "step": "STEP 2 (Wk 4)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 140g Broccoli, 50g Onion", "cal": 188, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "125g White Fish, 150g Green Cabbage", "cal": 150, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-22", "dayName": "Thursday", "step": "STEP 2 (Wk 4)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Turkey, 160g Silver Beet, 100g Fennel", "cal": 196, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 320g Asparagus", "cal": 184, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-23", "dayName": "Friday", "step": "STEP 2 (Wk 4)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 350g Zucchini", "cal": 180, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Tuna, 250g Broccoli", "cal": 195, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-24", "dayName": "Saturday", "step": "STEP 2 (Wk 4)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 170g Cauliflower, 70g Onion", "cal": 190, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 250g Bok Choy", "cal": 152, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-25", "dayName": "Sunday", "step": "STEP 2 (Wk 4)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 200g Green Cabbage, 1 Plain Rice Cake", "cal": 205, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 170g Zucchini", "cal": 156, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-26", "dayName": "Monday", "step": "STEP 2 (Wk 5)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 300g Cucumber", "cal": 165, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Salmon, 140g Cauliflower", "cal": 180, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-27", "dayName": "Tuesday", "step": "STEP 2 (Wk 5)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 150g Spinach, 1 Plain Rice Cake", "cal": 189, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 140g Cauliflower", "cal": 162, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-28", "dayName": "Wednesday", "step": "STEP 2 (Wk 5)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 140g Broccoli, 50g Onion", "cal": 188, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "125g White Fish, 150g Green Cabbage", "cal": 150, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-29", "dayName": "Thursday", "step": "STEP 2 (Wk 5)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Turkey, 160g Silver Beet, 100g Fennel", "cal": 196, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 320g Asparagus", "cal": 184, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-30", "dayName": "Friday", "step": "STEP 2 (Wk 5)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 350g Zucchini", "cal": 180, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Tuna, 250g Broccoli", "cal": 195, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-10-31", "dayName": "Saturday", "step": "STEP 2 (Wk 5)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 170g Cauliflower, 70g Onion", "cal": 190, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 250g Bok Choy", "cal": 152, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-11-01", "dayName": "Sunday", "step": "STEP 2 (Wk 5)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 200g Green Cabbage, 1 Plain Rice Cake", "cal": 205, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 170g Zucchini", "cal": 156, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-11-02", "dayName": "Monday", "step": "STEP 2 (Wk 6)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 300g Cucumber", "cal": 165, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Salmon, 140g Cauliflower", "cal": 180, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-11-03", "dayName": "Tuesday", "step": "STEP 2 (Wk 6)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 150g Spinach, 1 Plain Rice Cake", "cal": 189, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 140g Cauliflower", "cal": 162, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-11-04", "dayName": "Wednesday", "step": "STEP 2 (Wk 6)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 140g Broccoli, 50g Onion", "cal": 188, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "125g White Fish, 150g Green Cabbage", "cal": 150, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-11-05", "dayName": "Thursday", "step": "STEP 2 (Wk 6)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Turkey, 160g Silver Beet, 100g Fennel", "cal": 196, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 320g Asparagus", "cal": 184, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-11-06", "dayName": "Friday", "step": "STEP 2 (Wk 6)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 350g Zucchini", "cal": 180, "kind": "meal"}, {"time": "4:00 PM", "item": "100g Strawberries", "cal": 32, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Tuna, 250g Broccoli", "cal": 195, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-11-07", "dayName": "Saturday", "step": "STEP 2 (Wk 6)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 170g Cauliflower, 70g Onion", "cal": 190, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "6:30 PM", "item": "100g Chicken, 250g Bok Choy", "cal": 152, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}, {"date": "2026-11-08", "dayName": "Sunday", "step": "STEP 2 (Wk 6)", "items": [{"time": "7:00 AM", "item": "70g Protein & 1 Egg", "cal": 162, "kind": "meal"}, {"time": "7:05 AM", "item": "Fish Oil supplement (take WITH breakfast for absorption)", "cal": 0, "kind": "supplement"}, {"time": "8:00 AM", "item": "Blood Pressure medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}, {"time": "10:00 AM", "item": "1/2 Green Apple", "cal": 47, "kind": "meal"}, {"time": "12:15 PM", "item": "Metamucil (Psyllium Fiber) \u2014 1 tbsp in full glass of water, before lunch (per label: take before meal for appetite/blood sugar support)", "cal": 0, "kind": "supplement"}, {"time": "12:30 PM", "item": "100g Chicken, 200g Green Cabbage, 1 Plain Rice Cake", "cal": 205, "kind": "meal"}, {"time": "4:00 PM", "item": "1/2 Orange", "cal": 35, "kind": "meal"}, {"time": "6:30 PM", "item": "150g Prawns, 170g Zucchini", "cal": 156, "kind": "meal"}, {"time": "8:00 PM", "item": "Cholesterol medicine (PLACEHOLDER TIME \u2014 confirm with doctor)", "cal": 0, "kind": "medicine"}]}];
+
+let checkins = {}; // { "2026-09-26": { "0": true, "1": false, ... } }
+let weights = {}; // { "2026-09-26": "180.5" }
+let selectedDate = null;
+let storageReady = false;
+
+const todayStr = (() => {
+  const d = new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+})();
+
+function findClosestDateIndex() {
+  let idx = PLAN.findIndex(d => d.date === todayStr);
+  if (idx === -1) idx = 0;
+  return idx;
+}
+
+function hasScoutStorage() {
+  return window.storage &&
+    typeof window.storage.get === 'function' &&
+    typeof window.storage.set === 'function';
+}
+
+function readLocalStorage(key) {
+  try {
+    return window.localStorage ? window.localStorage.getItem(key) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeLocalStorage(key, value) {
+  if (!window.localStorage) throw new Error('localStorage is not available');
+  window.localStorage.setItem(key, value);
+}
+
+function parseStoredCheckins(value) {
+  if (!value) return {};
+  const parsed = JSON.parse(value);
+  return parsed && typeof parsed === 'object' ? parsed : {};
+}
+
+async function loadCheckins() {
+  let localCheckins = {};
+  let scoutCheckins = {};
+  let localWeights = {};
+  let scoutWeights = {};
+
+  try {
+    localCheckins = parseStoredCheckins(readLocalStorage('checkins'));
+    localWeights = parseStoredCheckins(readLocalStorage('weights'));
+  } catch (e) {
+    localCheckins = {};
+    localWeights = {};
+  }
+
+  try {
+    if (hasScoutStorage()) {
+      const checkinsResult = await window.storage.get('checkins', false);
+      const weightsResult = await window.storage.get('weights', false);
+      scoutCheckins = parseStoredCheckins(checkinsResult?.value);
+      scoutWeights = parseStoredCheckins(weightsResult?.value);
+    }
+  } catch (e) {
+    scoutCheckins = {};
+    scoutWeights = {};
+  }
+
+  checkins = { ...scoutCheckins, ...localCheckins };
+  weights = { ...scoutWeights, ...localWeights };
+  storageReady = true;
+}
+
+async function saveCheckins() {
+  const value = JSON.stringify(checkins);
+  let savedLocally = false;
+
+  try {
+    writeLocalStorage('checkins', value);
+    savedLocally = true;
+  } catch (e) {
+    console.error('Local save failed', e);
+  }
+
+  try {
+    if (hasScoutStorage()) await window.storage.set('checkins', value, false);
+  } catch (e) {
+    console.error('Scout save failed', e);
+  }
+
+  if (!savedLocally && !hasScoutStorage()) {
+    showToast('Could not save — try again');
+  }
+}
+
+async function saveWeights() {
+  const value = JSON.stringify(weights);
+  let savedLocally = false;
+
+  try {
+    writeLocalStorage('weights', value);
+    savedLocally = true;
+  } catch (e) {
+    console.error('Local weight save failed', e);
+  }
+
+  try {
+    if (hasScoutStorage()) await window.storage.set('weights', value, false);
+  } catch (e) {
+    console.error('Scout weight save failed', e);
+  }
+
+  if (!savedLocally && !hasScoutStorage()) {
+    showToast('Could not save weight — try again');
+  }
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove('show'), 1400);
+}
+
+function dayComplete(dateStr) {
+  const day = PLAN.find(d => d.date === dateStr);
+  if (!day) return false;
+  const c = checkins[dateStr] || {};
+  return day.items.every((_, i) => c[i]);
+}
+
+function renderDateStrip() {
+  const strip = document.getElementById('datestrip');
+  strip.innerHTML = '';
+  PLAN.forEach((day, idx) => {
+    const d = new Date(day.date + 'T00:00:00');
+    const dow = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const num = d.getDate();
+    const chip = document.createElement('div');
+    chip.className = 'datechip';
+    if (day.date === todayStr) chip.classList.add('today');
+    if (day.date === selectedDate) chip.classList.add('selected');
+    if (dayComplete(day.date)) chip.classList.add('complete');
+    const weightLabel = weights[day.date] ? escapeHTML(weights[day.date]) : '';
+    chip.innerHTML = `<div class="dow">${dow}</div><div class="num">${num}</div><div class="weight-mini">${weightLabel}</div><div class="dot"></div>`;
+    chip.addEventListener('click', () => {
+      selectedDate = day.date;
+      renderAll();
+      chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    });
+    chip.dataset.date = day.date;
+    strip.appendChild(chip);
+  });
+}
+
+function ringSVG(pct, color) {
+  const r = 32, c = 2 * Math.PI * r;
+  const offset = c - (pct/100) * c;
+  return `
+    <svg width="76" height="76" viewBox="0 0 76 76">
+      <circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--cp-border)" stroke-width="7"/>
+      <circle cx="38" cy="38" r="${r}" fill="none" stroke="${color}" stroke-width="7"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
+    </svg>`;
+}
+
+function renderSummary() {
+  const day = PLAN.find(d => d.date === selectedDate);
+  const summaryEl = document.getElementById('summary');
+  if (!day) { summaryEl.innerHTML = ''; return; }
+
+  const c = checkins[selectedDate] || {};
+  const total = day.items.length;
+  const done = day.items.filter((_, i) => c[i]).length;
+  const pct = total ? Math.round((done/total)*100) : 0;
+
+  const mealItems = day.items.filter(it => it.kind === 'meal');
+  const calDone = mealItems.reduce((sum, it) => {
+    const idx = day.items.indexOf(it);
+    return sum + (c[idx] ? it.cal : 0);
+  }, 0);
+  const calTotal = mealItems.reduce((sum, it) => sum + it.cal, 0);
+
+  const d = new Date(day.date + 'T00:00:00');
+  const dateLabel = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+  summaryEl.innerHTML = `
+    <div class="ring-wrap">
+      ${ringSVG(pct, 'var(--cp-accent)')}
+      <div class="ring-label"><div class="n">${done}/${total}</div><div class="d">done</div></div>
+    </div>
+    <div class="summary-text">
+      <span class="step">${escapeHTML(day.step)}</span>
+      <p class="date">${escapeHTML(dateLabel)}</p>
+      <div class="weight-row">
+        <label for="summaryWeightInput">Weight</label>
+        <input class="weight-input" id="summaryWeightInput" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Enter" value="${escapeHTML(weights[selectedDate] || '')}">
+        <span class="weight-unit">lbs</span>
+        <button class="weight-confirm" id="confirmWeightBtn" type="button">Confirm</button>
+      </div>
+      <p class="stats">${calDone} / ${calTotal} kcal logged so far</p>
+    </div>
+  `;
+
+  const weightInput = document.getElementById('summaryWeightInput');
+  const confirmButton = document.getElementById('confirmWeightBtn');
+  const confirmWeight = async () => {
+    const value = weightInput.value.trim();
+    if (value) {
+      weights[selectedDate] = value;
+    } else {
+      delete weights[selectedDate];
+    }
+    await saveWeights();
+    renderDateStrip();
+    showToast(value ? 'Weight added to date card' : 'Weight cleared');
+  };
+  confirmButton.addEventListener('click', confirmWeight);
+  weightInput.addEventListener('keydown', async (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      await confirmWeight();
+    }
+  });
+}
+
+function kindLabel(kind) {
+  if (kind === 'meal') return 'Meal';
+  if (kind === 'supplement') return 'Supplement';
+  if (kind === 'medicine') return 'Medicine';
+  return '';
+}
+
+function renderList() {
+  const day = PLAN.find(d => d.date === selectedDate);
+  const listEl = document.getElementById('list');
+  listEl.innerHTML = '';
+  if (!day) return;
+
+  const c = checkins[selectedDate] || {};
+
+  day.items.forEach((it, idx) => {
+    const isDone = !!c[idx];
+    const row = document.createElement('div');
+    row.className = `item kind-${it.kind}${isDone ? ' done' : ''}`;
+    row.setAttribute('role', 'button');
+    row.setAttribute('tabindex', '0');
+    row.setAttribute('aria-pressed', String(isDone));
+    row.innerHTML = `
+      <div class="check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cp-accent-fg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <div class="item-body">
+        <div class="item-time">${escapeHTML(it.time)}</div>
+        <div class="item-title">${escapeHTML(it.item)}</div>
+        <span class="item-kind-tag">${kindLabel(it.kind)}</span>
+      </div>
+      ${it.kind === 'meal' && it.cal ? `<div class="item-cal">${it.cal}<br>kcal</div>` : '<div class="item-cal"></div>'}
+    `;
+    const toggleItem = async () => {
+      if (!checkins[selectedDate]) checkins[selectedDate] = {};
+      checkins[selectedDate][idx] = !checkins[selectedDate][idx];
+      await saveCheckins();
+      renderAll();
+      if (checkins[selectedDate][idx]) showToast('Marked done');
+    };
+    row.addEventListener('click', toggleItem);
+    row.addEventListener('keydown', async (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        await toggleItem();
+      }
+    });
+    listEl.appendChild(row);
+  });
+}
+
+function renderAll() {
+  renderDateStrip();
+  renderSummary();
+  renderList();
+}
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  if (!selectedDate) return;
+  checkins[selectedDate] = {};
+  await saveCheckins();
+  renderAll();
+  showToast('Selected day reset');
+});
+
+(async function init() {
+  document.getElementById('list').innerHTML = '<div class="loading">Loading your tracker…</div>';
+  await loadCheckins();
+  selectedDate = PLAN[findClosestDateIndex()].date;
+  renderAll();
+  setTimeout(() => {
+    const sel = document.querySelector('.datechip.selected');
+    if (sel) sel.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+  }, 50);
+})();
+</script>
+
+</body>
+</html>
