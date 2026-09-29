@@ -89,7 +89,7 @@
     font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  body { padding-bottom: 48px; }
+  body { padding-bottom: 112px; }
 
   .topbar {
     position: sticky; top: 0; z-index: 20;
@@ -145,7 +145,7 @@
   .datestrip::-webkit-scrollbar { display: none; }
   .datechip {
     flex: 0 0 auto;
-    width: 54px;
+    width: 66px;
     padding: 8px 0 10px 0;
     border-radius: 14px;
     border: 1px solid var(--border);
@@ -157,11 +157,15 @@
   .datechip .dow { font-size: 10.5px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
   .datechip .num { font-size: 17px; font-weight: 700; margin-top: 2px; }
   .datechip .weight-mini { min-height: 12px; margin-top: 2px; font-size: 10px; font-weight: 700; color: var(--ink-soft); }
-  .datechip .dot { width: 5px; height: 5px; border-radius: 50%; margin: 5px auto 0 auto; background: transparent; }
+  .datechip .pct-mini { min-height: 11px; margin-top: 1px; font-size: 9.5px; color: var(--ink-soft); }
+  .datechip .trend-mini { min-height: 11px; margin-top: 1px; font-size: 9.5px; font-weight: 700; color: var(--cp-success); }
+  .datechip .dot { width: 28px; height: 3px; border-radius: 999px; margin: 5px auto 0 auto; background: var(--cp-border); overflow: hidden; }
+  .datechip .dot span { display: block; height: 100%; background: var(--done); border-radius: 999px; }
   .datechip.today { border-color: var(--clay); }
   .datechip.selected { background: var(--pine); border-color: var(--pine); }
-  .datechip.selected .dow, .datechip.selected .num, .datechip.selected .weight-mini { color: var(--cp-accent-fg); }
-  .datechip.complete .dot { background: var(--done); }
+  .datechip.selected .dow, .datechip.selected .num, .datechip.selected .weight-mini, .datechip.selected .pct-mini, .datechip.selected .trend-mini { color: var(--cp-accent-fg); }
+  .datechip.selected .dot { background: var(--cp-accent-fg); opacity: .45; }
+  .datechip.selected .dot span { background: var(--cp-accent-fg); opacity: 1; }
   .datechip:active { transform: scale(0.94); }
 
   .summary {
@@ -247,6 +251,220 @@
     font-size: 12.5px;
     color: var(--ink-soft);
     margin: 0;
+  }
+
+  .dashboard-grid {
+    margin: 12px 18px 4px 18px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .insight-card,
+  .notes-card,
+  .next-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .insight-label {
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .insight-value {
+    font-size: 20px;
+    font-weight: 800;
+    margin-top: 4px;
+    color: var(--ink);
+  }
+  .insight-value.good { color: var(--cp-success); }
+  .insight-value.bad { color: var(--cp-danger); }
+  .insight-sub {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 3px;
+    line-height: 1.35;
+  }
+  .notes-card {
+    margin: 12px 18px 4px 18px;
+  }
+  .notes-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .notes-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .notes-status {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .notes-input {
+    width: 100%;
+    min-height: 76px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    padding: 10px;
+    background: var(--cp-surface);
+    color: var(--ink);
+    font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .photo-card {
+    margin: 12px 18px 4px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .photo-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .photo-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .photo-sub {
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+  .photo-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .photo-upload-label,
+  .photo-remove {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .photo-upload-label {
+    border: 1px solid var(--cp-accent);
+    background: var(--cp-accent);
+    color: var(--cp-accent-fg);
+  }
+  .photo-remove {
+    border: 1px solid var(--border);
+    background: var(--cp-surface);
+    color: var(--ink-soft);
+  }
+  .photo-input {
+    display: none;
+  }
+  .photo-frame {
+    margin-top: 10px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background:
+      radial-gradient(circle at top right, var(--cp-highlight), transparent 34%),
+      var(--cp-surface-soft);
+    min-height: 180px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .photo-preview {
+    width: 100%;
+    height: auto;
+    max-height: 360px;
+    object-fit: cover;
+    display: block;
+  }
+  .photo-empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+  .photo-empty strong {
+    display: block;
+    color: var(--ink);
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .next-card {
+    margin: 12px 18px 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .next-main {
+    min-width: 0;
+  }
+  .next-time {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--cp-accent);
+  }
+  .next-title {
+    font-size: 13px;
+    color: var(--ink);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 10px 12px 14px 12px;
+    background: var(--cp-panel-strong);
+    border-top: 1px solid var(--border);
+  }
+  .nav-btn {
+    min-height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--cp-surface);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .nav-btn.primary {
+    background: var(--cp-accent);
+    border-color: var(--cp-accent);
+    color: var(--cp-accent-fg);
+  }
+
+  @media (max-width: 520px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .summary { align-items: flex-start; }
+    .datechip { width: 68px; }
   }
 
   .list {
@@ -396,8 +614,13 @@
 <div class="datestrip" id="datestrip"></div>
 
 <div class="summary" id="summary"></div>
+<div class="dashboard-grid" id="insights"></div>
+<div class="next-card" id="nextPanel"></div>
 
 <div class="list" id="list"></div>
+
+<div class="notes-card" id="notesPanel"></div>
+<div class="photo-card" id="photoPanel"></div>
 
 <div class="footnote">
   <b>Reminders:</b> All protein/veg amounts are raw weight. Calories are planning estimates, not lab-verified. BP (8:00 AM) &amp; cholesterol (8:00 PM) medicine times are placeholders — confirm actual times with your doctor. Fiber is taken before lunch per the Metamucil label; space it from medicines and drink a full glass of water.
@@ -408,6 +631,13 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="bottom-nav">
+  <button class="nav-btn" id="prevDayBtn" type="button">Prev</button>
+  <button class="nav-btn primary" id="todayBtn" type="button">Today</button>
+  <button class="nav-btn" id="nextDayBtn" type="button">Next</button>
+  <button class="nav-btn" id="syncJumpBtn" type="button">Sync</button>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -447,6 +677,8 @@ const PLAN = [{"date": "2026-09-26", "dayName": "Saturday", "step": "STEP 1", "i
 
 let checkins = {}; // { "2026-09-26": { "0": true, "1": false, ... } }
 let weights = {}; // { "2026-09-26": "180.5" }
+let notes = {}; // { "2026-09-26": "Felt good after lunch" }
+let photos = {}; // { "2026-09-26": "data:image/jpeg;base64,..." }
 let selectedDate = null;
 let storageReady = false;
 let currentUser = null;
@@ -501,6 +733,8 @@ async function saveLocalState() {
   try {
     writeLocalStorage('checkins', JSON.stringify(checkins));
     writeLocalStorage('weights', JSON.stringify(weights));
+    writeLocalStorage('notes', JSON.stringify(notes));
+    writeLocalStorage('photos', JSON.stringify(photos));
   } catch (e) {
     console.error('Local state save failed', e);
   }
@@ -514,6 +748,8 @@ async function saveCloudState() {
   await setDoc(ref, {
     checkins,
     weights,
+    notes,
+    photos,
     updatedAt: serverTimestamp()
   }, { merge: true });
   setSyncStatus(`Synced as ${currentUser.email || 'signed-in user'}`);
@@ -524,13 +760,19 @@ async function loadCheckins() {
   let scoutCheckins = {};
   let localWeights = {};
   let scoutWeights = {};
+  let localNotes = {};
+  let localPhotos = {};
 
   try {
     localCheckins = parseStoredCheckins(readLocalStorage('checkins'));
     localWeights = parseStoredCheckins(readLocalStorage('weights'));
+    localNotes = parseStoredCheckins(readLocalStorage('notes'));
+    localPhotos = parseStoredCheckins(readLocalStorage('photos'));
   } catch (e) {
     localCheckins = {};
     localWeights = {};
+    localNotes = {};
+    localPhotos = {};
   }
 
   try {
@@ -547,6 +789,8 @@ async function loadCheckins() {
 
   checkins = { ...scoutCheckins, ...localCheckins };
   weights = { ...scoutWeights, ...localWeights };
+  notes = localNotes;
+  photos = localPhotos;
   storageReady = true;
 }
 
@@ -608,6 +852,36 @@ async function saveWeights() {
   }
 }
 
+async function saveNotes() {
+  try {
+    writeLocalStorage('notes', JSON.stringify(notes));
+  } catch (e) {
+    console.error('Local notes save failed', e);
+  }
+
+  try {
+    await saveCloudState();
+  } catch (e) {
+    console.error('Cloud notes save failed', e);
+    setSyncStatus('Cloud sync failed; saved on this device');
+  }
+}
+
+async function savePhotos() {
+  try {
+    writeLocalStorage('photos', JSON.stringify(photos));
+  } catch (e) {
+    console.error('Local photo save failed', e);
+  }
+
+  try {
+    await saveCloudState();
+  } catch (e) {
+    console.error('Cloud photo save failed', e);
+    setSyncStatus('Cloud sync failed; saved on this device');
+  }
+}
+
 async function mergeCloudState(user) {
   currentUser = user;
   document.getElementById('signInBtn').hidden = true;
@@ -620,6 +894,8 @@ async function mergeCloudState(user) {
     const cloud = snapshot.data();
     checkins = { ...(cloud.checkins || {}), ...checkins };
     weights = { ...(cloud.weights || {}), ...weights };
+    notes = { ...(cloud.notes || {}), ...notes };
+    photos = { ...(cloud.photos || {}), ...photos };
   }
 
   await saveLocalState();
@@ -632,6 +908,8 @@ async function mergeCloudState(user) {
     const cloud = nextSnapshot.data();
     checkins = cloud.checkins || {};
     weights = cloud.weights || {};
+    notes = cloud.notes || {};
+    photos = cloud.photos || {};
     await saveLocalState();
     renderAll();
     setSyncStatus(`Synced as ${currentUser.email || 'signed-in user'}`);
@@ -666,6 +944,44 @@ function dayComplete(dateStr) {
   return day.items.every((_, i) => c[i]);
 }
 
+function completionForDate(dateStr) {
+  const day = PLAN.find(d => d.date === dateStr);
+  if (!day) return { done: 0, total: 0, pct: 0 };
+  const c = checkins[dateStr] || {};
+  const done = day.items.filter((_, i) => c[i]).length;
+  const total = day.items.length;
+  return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
+function getWeightEntries() {
+  return PLAN
+    .map(day => ({ date: day.date, weight: Number(weights[day.date]) }))
+    .filter(entry => Number.isFinite(entry.weight) && entry.weight > 0);
+}
+
+function weightTrendForDate(dateStr) {
+  const entries = getWeightEntries();
+  const currentIndex = entries.findIndex(entry => entry.date === dateStr);
+  if (currentIndex <= 0) return '';
+  const delta = entries[currentIndex].weight - entries[currentIndex - 1].weight;
+  if (Math.abs(delta) < 0.05) return '0.0';
+  return `${delta < 0 ? '↓' : '↑'}${Math.abs(delta).toFixed(1)}`;
+}
+
+function selectedDateIndex() {
+  return PLAN.findIndex(day => day.date === selectedDate);
+}
+
+function selectDateByIndex(index) {
+  const safeIndex = Math.min(Math.max(index, 0), PLAN.length - 1);
+  selectedDate = PLAN[safeIndex].date;
+  renderAll();
+  setTimeout(() => {
+    const sel = document.querySelector('.datechip.selected');
+    if (sel) sel.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 50);
+}
+
 function renderDateStrip() {
   const strip = document.getElementById('datestrip');
   strip.innerHTML = '';
@@ -678,8 +994,17 @@ function renderDateStrip() {
     if (day.date === todayStr) chip.classList.add('today');
     if (day.date === selectedDate) chip.classList.add('selected');
     if (dayComplete(day.date)) chip.classList.add('complete');
+    const completion = completionForDate(day.date);
     const weightLabel = weights[day.date] ? escapeHTML(weights[day.date]) : '';
-    chip.innerHTML = `<div class="dow">${dow}</div><div class="num">${num}</div><div class="weight-mini">${weightLabel}</div><div class="dot"></div>`;
+    const trend = weightTrendForDate(day.date);
+    chip.innerHTML = `
+      <div class="dow">${dow}</div>
+      <div class="num">${num}</div>
+      <div class="weight-mini">${weightLabel}</div>
+      <div class="pct-mini">${completion.pct}%</div>
+      <div class="trend-mini">${escapeHTML(trend)}</div>
+      <div class="dot"><span style="width:${completion.pct}%"></span></div>
+    `;
     chip.addEventListener('click', () => {
       selectedDate = day.date;
       renderAll();
@@ -761,6 +1086,163 @@ function renderSummary() {
   });
 }
 
+function renderInsights() {
+  const insightsEl = document.getElementById('insights');
+  const entries = getWeightEntries();
+  const first = entries[0];
+  const latest = entries[entries.length - 1];
+  const totalLost = first && latest ? first.weight - latest.weight : null;
+  const last7 = entries.slice(-7);
+  const weeklyAverage = last7.length
+    ? last7.reduce((sum, entry) => sum + entry.weight, 0) / last7.length
+    : null;
+  const totalChangeClass = totalLost === null ? '' : (totalLost >= 0 ? 'good' : 'bad');
+
+  insightsEl.innerHTML = `
+    <div class="insight-card">
+      <div class="insight-label">Total change</div>
+      <div class="insight-value ${totalChangeClass}">${totalLost === null ? '--' : `${totalLost >= 0 ? '-' : '+'}${Math.abs(totalLost).toFixed(1)} lbs`}</div>
+      <div class="insight-sub">${first && latest ? `From ${first.weight.toFixed(1)} to ${latest.weight.toFixed(1)} lbs` : 'Starts after two weights'}</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-label">7-entry average</div>
+      <div class="insight-value">${weeklyAverage === null ? '--' : `${weeklyAverage.toFixed(1)} lbs`}</div>
+      <div class="insight-sub">Smooths daily fluctuations</div>
+    </div>
+  `;
+}
+
+function renderNotes() {
+  const notesPanel = document.getElementById('notesPanel');
+  const value = notes[selectedDate] || '';
+  notesPanel.innerHTML = `
+    <div class="notes-head">
+      <div class="notes-title">Daily notes</div>
+      <div class="notes-status" id="notesStatus">${value ? 'Saved note' : 'Optional'}</div>
+    </div>
+    <textarea class="notes-input" id="dailyNotesInput" placeholder="Energy, hunger, cravings, symptoms, meal swaps, or anything to remember for this day...">${escapeHTML(value)}</textarea>
+  `;
+
+  const input = document.getElementById('dailyNotesInput');
+  let noteTimer = null;
+  input.addEventListener('input', () => {
+    const status = document.getElementById('notesStatus');
+    status.textContent = 'Saving...';
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(async () => {
+      const text = input.value.trim();
+      if (text) {
+        notes[selectedDate] = text;
+      } else {
+        delete notes[selectedDate];
+      }
+      await saveNotes();
+      status.textContent = text ? 'Saved note' : 'Optional';
+    }, 450);
+  });
+}
+
+function compressImageFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/')) {
+      reject(new Error('Please choose an image file.'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSide = 1200;
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.78));
+      };
+      img.onerror = () => reject(new Error('Could not read this image.'));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('Could not load this file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotoPanel() {
+  const panel = document.getElementById('photoPanel');
+  const photo = photos[selectedDate] || '';
+  const dateLabel = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  panel.innerHTML = `
+    <div class="photo-head">
+      <div>
+        <div class="photo-title">Daily photo</div>
+        <div class="photo-sub">${photo ? `Photo saved for ${dateLabel}` : 'Add a visual check-in for this day'}</div>
+      </div>
+      <div class="photo-actions">
+        <label class="photo-upload-label" for="dailyPhotoInput">${photo ? 'Change photo' : 'Upload photo'}</label>
+        <input class="photo-input" id="dailyPhotoInput" type="file" accept="image/*">
+        ${photo ? '<button class="photo-remove" id="removePhotoBtn" type="button">Remove</button>' : ''}
+      </div>
+    </div>
+    <div class="photo-frame">
+      ${photo
+        ? `<img class="photo-preview" src="${photo}" alt="Daily photo for ${escapeHTML(dateLabel)}">`
+        : `<div class="photo-empty"><strong>No photo yet</strong>Upload a meal, progress, or reminder photo for this day.</div>`}
+    </div>
+  `;
+
+  document.getElementById('dailyPhotoInput').addEventListener('change', async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      showToast('Saving photo...');
+      photos[selectedDate] = await compressImageFile(file);
+      await savePhotos();
+      renderPhotoPanel();
+      showToast('Photo saved');
+    } catch (e) {
+      console.error('Photo save failed', e);
+      showToast(e.message || 'Could not save photo');
+    }
+  });
+
+  const removeButton = document.getElementById('removePhotoBtn');
+  if (removeButton) {
+    removeButton.addEventListener('click', async () => {
+      delete photos[selectedDate];
+      await savePhotos();
+      renderPhotoPanel();
+      showToast('Photo removed');
+    });
+  }
+}
+
+function renderNextPanel() {
+  const panel = document.getElementById('nextPanel');
+  const day = PLAN.find(d => d.date === selectedDate);
+  if (!day) return;
+  const c = checkins[selectedDate] || {};
+  const nextIndex = day.items.findIndex((_, i) => !c[i]);
+  const next = nextIndex >= 0 ? day.items[nextIndex] : null;
+  panel.innerHTML = next
+    ? `
+      <div class="next-main">
+        <div class="next-time">Next up · ${escapeHTML(next.time)}</div>
+        <div class="next-title">${escapeHTML(next.item)}</div>
+      </div>
+      <span class="item-kind-tag">${kindLabel(next.kind)}</span>
+    `
+    : `
+      <div class="next-main">
+        <div class="next-time">Day complete</div>
+        <div class="next-title">All tasks are checked off for this date.</div>
+      </div>
+      <span class="item-kind-tag">Done</span>
+    `;
+}
+
 function kindLabel(kind) {
   if (kind === 'meal') return 'Meal';
   if (kind === 'supplement') return 'Supplement';
@@ -817,8 +1299,30 @@ function renderList() {
 function renderAll() {
   renderDateStrip();
   renderSummary();
+  renderInsights();
+  renderNotes();
+  renderPhotoPanel();
+  renderNextPanel();
   renderList();
 }
+
+document.getElementById('prevDayBtn').addEventListener('click', () => {
+  selectDateByIndex(selectedDateIndex() - 1);
+});
+
+document.getElementById('todayBtn').addEventListener('click', () => {
+  const todayIndex = PLAN.findIndex(day => day.date === todayStr);
+  selectDateByIndex(todayIndex >= 0 ? todayIndex : findClosestDateIndex());
+});
+
+document.getElementById('nextDayBtn').addEventListener('click', () => {
+  selectDateByIndex(selectedDateIndex() + 1);
+});
+
+document.getElementById('syncJumpBtn').addEventListener('click', () => {
+  document.querySelector('.auth-row')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast(document.getElementById('syncStatus').textContent || 'Sync status');
+});
 
 document.getElementById('resetBtn').addEventListener('click', async () => {
   if (!selectedDate) return;
